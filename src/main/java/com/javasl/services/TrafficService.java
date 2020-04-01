@@ -1,37 +1,37 @@
 package com.javasl.services;
 
 import com.javasl.models.trafficsituation.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-@SpringBootApplication
+import reactor.core.publisher.Mono;
+
 @Service
 public class TrafficService {
+	private static final Logger log = LoggerFactory.getLogger(TrafficService.class);
+	private WebClient client;
 
-    private static final Logger log = LoggerFactory.getLogger(TrafficService.class);
-	//private RestTemplate client;
-
-	public TrafficService(){
-		//RestTemplateBuilder builder = new RestTemplateBuilder();
-		//client = restTemplate(builder);
-	}
-
-	@Bean
-	public RestTemplate restTemplate(RestTemplateBuilder builder) {
-		return builder.build();
+	public TrafficService(WebClient.Builder webClientBuilder){
+		this.client = webClientBuilder.baseUrl("http://localhost:8080").build();
 	}
     
     public TrafficSituation getTrafficSituation(){
-		RestTemplateBuilder builder = new RestTemplateBuilder();
-		RestTemplate restTemplate = restTemplate(builder);
-		TrafficSituation situation = restTemplate.getForObject("https://gturnquist-quoters.cfapps.io/api/random", TrafficSituation.class);
-		
-		log.info(situation.toString());
+		Mono<String> result = client
+			.get()
+			.uri(uriBuilder -> uriBuilder
+				.path("/api/v1/hello")
+				.query("")
+				.build())
+			.retrieve()
+			.bodyToMono(String.class);
+
+		TrafficSituation situation = new TrafficSituation();
+		situation.setMessage(result.block());
+
+		log.info("succesfully requested hello");
 		return situation;
     }
 }
